@@ -1,0 +1,30 @@
+// DO NOT EDIT ABOVE THIS LINE
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TentStatus {
+  good
+  needs_repair
+  missing_items
+}
+
+model Tent {
+  id            String     @id @default(cuid())
+  name          String
+  model         String
+  capacity      Int
+  status        TentStatus
+  condition     String
+  lastInspected DateTime
+  missingItems  String[]
+  damagedItems  String[]
+  location      String
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
