@@ -27,6 +27,8 @@ app.get('/tents', async (_req, res) => {
     ...r,
     status: toUiStatus(r.status),
     lastInspected: r.lastInspected.toISOString().split('T')[0],
+    missingItems: JSON.parse(r.missingItems),
+    damagedItems: JSON.parse(r.damagedItems),
   }))
   res.json(tents)
 })
@@ -42,12 +44,17 @@ app.post('/tents', async (req, res) => {
       status: toDbStatus(b.status),
       condition: b.condition ?? '',
       lastInspected: new Date(b.lastInspected),
-      missingItems: b.missingItems ?? [],
-      damagedItems: b.damagedItems ?? [],
+      missingItems: JSON.stringify(b.missingItems ?? []),
+      damagedItems: JSON.stringify(b.damagedItems ?? []),
       location: b.location ?? ''
     }
   })
-  res.status(201).json({ ...created, status: toUiStatus(created.status) })
+  res.status(201).json({
+    ...created,
+    status: toUiStatus(created.status),
+    missingItems: JSON.parse(created.missingItems),
+    damagedItems: JSON.parse(created.damagedItems),
+  })
 })
 
 // UPDATE
@@ -63,12 +70,17 @@ app.patch('/tents/:id', async (req, res) => {
       status: toDbStatus(b.status),
       condition: b.condition,
       lastInspected: new Date(b.lastInspected),
-      missingItems: b.missingItems,
-      damagedItems: b.damagedItems,
+      missingItems: JSON.stringify(b.missingItems),
+      damagedItems: JSON.stringify(b.damagedItems),
       location: b.location
     }
   })
-  res.json({ ...updated, status: toUiStatus(updated.status) })
+  res.json({
+    ...updated,
+    status: toUiStatus(updated.status),
+    missingItems: JSON.parse(updated.missingItems),
+    damagedItems: JSON.parse(updated.damagedItems),
+  })
 })
 
 // DELETE

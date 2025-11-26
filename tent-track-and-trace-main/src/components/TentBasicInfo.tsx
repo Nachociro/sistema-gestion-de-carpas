@@ -51,10 +51,10 @@ const TentBasicInfo: React.FC<TentBasicInfoProps> = ({ formData, onChange }) => 
           <Input
             id="capacity"
             type="number"
-            min="1"
-            max="20"
+            step="any"
+            min="0"
             value={formData.capacity}
-            onChange={(e) => onChange('capacity', parseInt(e.target.value) || 2)}
+            onChange={(e) => onChange('capacity', parseFloat(e.target.value) || 0)}
             required
           />
         </div>

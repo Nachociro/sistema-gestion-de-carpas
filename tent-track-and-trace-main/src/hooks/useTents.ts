@@ -36,15 +36,20 @@ export function useCreateTent() {
       qc.setQueryData(['stats'], computeStats([...prev, optimistic]))
       return { prev }
     },
+    onSuccess: (created) => {
+      const prev = qc.getQueryData<Tent[]>(['tents']) ?? []
+      // Reemplazar la carpa optimista con la creada realmente
+      const next = prev.map(t => 
+        t.id.startsWith('optimistic-') ? created : t
+      )
+      qc.setQueryData<Tent[]>(['tents'], next)
+      qc.setQueryData(['stats'], computeStats(next))
+    },
     onError: (_err, _vars, ctx) => {
       if (ctx?.prev) {
         qc.setQueryData<Tent[]>(['tents'], ctx.prev)
         qc.setQueryData(['stats'], computeStats(ctx.prev))
       }
-    },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ['tents'] })
-      qc.invalidateQueries({ queryKey: ['stats'] })
     },
   })
 }
@@ -62,15 +67,17 @@ export function useUpdateTent() {
       qc.setQueryData(['stats'], computeStats(next))
       return { prev }
     },
+    onSuccess: (updated) => {
+      const prev = qc.getQueryData<Tent[]>(['tents']) ?? []
+      const next = prev.map(t => t.id === updated.id ? updated : t)
+      qc.setQueryData<Tent[]>(['tents'], next)
+      qc.setQueryData(['stats'], computeStats(next))
+    },
     onError: (_err, _vars, ctx) => {
       if (ctx?.prev) {
         qc.setQueryData<Tent[]>(['tents'], ctx.prev)
         qc.setQueryData(['stats'], computeStats(ctx.prev))
       }
-    },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ['tents'] })
-      qc.invalidateQueries({ queryKey: ['stats'] })
     },
   })
 }
@@ -88,15 +95,14 @@ export function useDeleteTent() {
       qc.setQueryData(['stats'], computeStats(next))
       return { prev }
     },
+    onSuccess: () => {
+      // Nada extra que hacer - ya se actualizó en onMutate
+    },
     onError: (_err, _vars, ctx) => {
       if (ctx?.prev) {
         qc.setQueryData<Tent[]>(['tents'], ctx.prev)
         qc.setQueryData(['stats'], computeStats(ctx.prev))
       }
-    },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ['tents'] })
-      qc.invalidateQueries({ queryKey: ['stats'] })
     },
   })
 }
