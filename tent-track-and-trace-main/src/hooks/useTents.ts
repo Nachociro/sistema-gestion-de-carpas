@@ -4,7 +4,10 @@ import type { Tent } from '@/types/tent'
 
 const mapOut = (t: any): Tent => ({
   ...t,
-  lastInspected: new Date(t.lastInspected).toISOString().split('T')[0]
+  capacity: Number(t.capacity),
+  lastInspected: new Date(t.lastInspected).toISOString().split('T')[0],
+  missingItems: Array.isArray(t.missingItems) ? t.missingItems : JSON.parse(t.missingItems ?? '[]'),
+  damagedItems: Array.isArray(t.damagedItems) ? t.damagedItems : JSON.parse(t.damagedItems ?? '[]')
 })
 
 const computeStats = (tents: Tent[]) => ({
@@ -38,9 +41,10 @@ export function useCreateTent() {
     },
     onSuccess: (created) => {
       const prev = qc.getQueryData<Tent[]>(['tents']) ?? []
+      const normalized = mapOut(created)
       // Reemplazar la carpa optimista con la creada realmente
       const next = prev.map(t => 
-        t.id.startsWith('optimistic-') ? created : t
+        t.id.startsWith('optimistic-') ? normalized : t
       )
       qc.setQueryData<Tent[]>(['tents'], next)
       qc.setQueryData(['stats'], computeStats(next))
@@ -69,7 +73,8 @@ export function useUpdateTent() {
     },
     onSuccess: (updated) => {
       const prev = qc.getQueryData<Tent[]>(['tents']) ?? []
-      const next = prev.map(t => t.id === updated.id ? updated : t)
+      const normalized = mapOut(updated)
+      const next = prev.map(t => t.id === normalized.id ? normalized : t)
       qc.setQueryData<Tent[]>(['tents'], next)
       qc.setQueryData(['stats'], computeStats(next))
     },
@@ -86,7 +91,7 @@ export function useDeleteTent() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) =>
-      fetch(`${API}/tents/${id}`, { method: 'DELETE' }).then(() => null),
+      j<void>(`${API}/tents/${id}`, { method: 'DELETE' }).then(() => null),
     onMutate: async (id) => {
       await qc.cancelQueries({ queryKey: ['tents'] })
       const prev = qc.getQueryData<Tent[]>(['tents']) ?? []
@@ -95,8 +100,9 @@ export function useDeleteTent() {
       qc.setQueryData(['stats'], computeStats(next))
       return { prev }
     },
-    onSuccess: () => {
-      // Nada extra que hacer - ya se actualizó en onMutate
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ['tents'] })
+      await qc.invalidateQueries({ queryKey: ['stats'] })
     },
     onError: (_err, _vars, ctx) => {
       if (ctx?.prev) {

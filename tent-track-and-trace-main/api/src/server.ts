@@ -20,17 +20,31 @@ const toUiStatus = (s: TentStatus): string => {
   return 'good'
 }
 
+const serializeTent = (t: {
+  id: string
+  name: string
+  model: string
+  capacity: number
+  status: TentStatus
+  condition: string
+  lastInspected: Date
+  missingItems: string
+  damagedItems: string
+  location: string
+  createdAt: Date
+  updatedAt: Date
+}) => ({
+  ...t,
+  status: toUiStatus(t.status),
+  lastInspected: t.lastInspected.toISOString().split('T')[0],
+  missingItems: JSON.parse(t.missingItems),
+  damagedItems: JSON.parse(t.damagedItems),
+})
+
 // LIST
 app.get('/tents', async (_req, res) => {
   const rows = await prisma.tent.findMany({ orderBy: { createdAt: 'desc' } })
-  const tents = rows.map(r => ({
-    ...r,
-    status: toUiStatus(r.status),
-    lastInspected: r.lastInspected.toISOString().split('T')[0],
-    missingItems: JSON.parse(r.missingItems),
-    damagedItems: JSON.parse(r.damagedItems),
-  }))
-  res.json(tents)
+  res.json(rows.map(serializeTent))
 })
 
 // CREATE
@@ -49,12 +63,7 @@ app.post('/tents', async (req, res) => {
       location: b.location ?? ''
     }
   })
-  res.status(201).json({
-    ...created,
-    status: toUiStatus(created.status),
-    missingItems: JSON.parse(created.missingItems),
-    damagedItems: JSON.parse(created.damagedItems),
-  })
+  res.status(201).json(serializeTent(created))
 })
 
 // UPDATE
@@ -75,12 +84,7 @@ app.patch('/tents/:id', async (req, res) => {
       location: b.location
     }
   })
-  res.json({
-    ...updated,
-    status: toUiStatus(updated.status),
-    missingItems: JSON.parse(updated.missingItems),
-    damagedItems: JSON.parse(updated.damagedItems),
-  })
+  res.json(serializeTent(updated))
 })
 
 // DELETE
